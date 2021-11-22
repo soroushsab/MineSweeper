@@ -26,7 +26,8 @@ class Mine():
         self.btn_close = Button(self.root, text = "Close",command=lambda: self.close_program()).place(x = self.w_root - 50, y = self.h_root - 50)
         
         self.root.mainloop()
-        
+
+
     def easy_game(self):
         self.root.destroy()
         self.root = Tk()
@@ -40,9 +41,9 @@ class Mine():
                                        , ((self.root.winfo_screenheight()/2)-(self.h_root/2))))
         
         self.lbl_title = Label(self.root,text='Easy!').place(x = 10,y = 10)
-    
+
         self.btn_reset = Button(self.root, text = "Reset!",command=lambda: self.easy_game()).place(x = self.w_root - 50, y = 10)
-        
+
         self.btn_back = Button(self.root, text = "Back!",command=lambda: self.__init__(self.root)).place(x = self.w_root - 100, y = 10)
         
         self.score = 0
@@ -55,6 +56,8 @@ class Mine():
         for i in range(self.n_table):
             for j in range(self.n_table):
                 self.b[i][j] = Button(self.root, text = "#").place(x = 50 + i*20, y = 70 + j*20)
+        self.root.mainloop()
+
     
     def normal_game(self):
         self.root.destroy()
