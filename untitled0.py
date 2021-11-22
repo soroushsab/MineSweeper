@@ -40,15 +40,15 @@ class Mine():
                                        ((self.root.winfo_screenwidth()/2)-(self.w_root/2))
                                        , ((self.root.winfo_screenheight()/2)-(self.h_root/2))))
         
-        self.lbl_title = Label(self.root,text='Easy!').place(x = 10,y = 10)
+        self.lbl_title = Label(self.root,text='Easy!')
 
-        self.btn_reset = Button(self.root, text = "Reset!",command=lambda: self.easy_game()).place(x = self.w_root - 50, y = 10)
+        self.btn_reset = Button(self.root, text = "Reset!",command=lambda: self.easy_game())
 
-        self.btn_back = Button(self.root, text = "Back!",command=lambda: self.__init__(self.root)).place(x = self.w_root - 100, y = 10)
+        self.btn_back = Button(self.root, text = "Back!",command=lambda: self.__init__(self.root))
         
         self.score = 0
             
-        self.lbl_title = Label(self.root,text='Your score: '+str(self.score)).place(x = 70,y = 10)
+        self.lbl_score = Label(self.root,text='Your score: '+str(self.score))
         
         self.n_table = 10
         
@@ -56,6 +56,13 @@ class Mine():
         for i in range(self.n_table):
             for j in range(self.n_table):
                 self.b[i][j] = Button(self.root, text = "#").place(x = 50 + i*20, y = 70 + j*20)
+
+
+
+        self.lbl_title.place(x = 10,y = 10)
+        self.btn_reset.place(x = self.w_root - 50, y = 10)
+        self.btn_back.place(x = self.w_root - 100, y = 10)
+        self.lbl_score.place(x = 70,y = 10)
         self.root.mainloop()
 
     
