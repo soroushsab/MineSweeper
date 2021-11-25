@@ -80,13 +80,60 @@ class Mine():
         return lambda Button: self.right_click_0(self.btns[i][j])
     #-------------------------------------------------------------------------#
     def right_click_0(self,btn):
-        pass
+        if self.mines_no > 0 and btn['state'] == 'O':
+            btn['btn'].config(text='P')
+            btn['state'] = 'P'
+            self.mines_no -= 1
+        elif btn['state'] == 'P':
+            btn['btn'].config(text=' ')
+            btn['state'] = 'O'
+            self.mines_no += 1
+        else:
+            pass
     #-------------------------------------------------------------------------#
     def left_click(self,i,j):
         return lambda Button: self.left_click_0(self.btns[i][j])
     #-------------------------------------------------------------------------#
     def left_click_0(self,btn):
-        pass
+        if btn['checkMine']:
+            pass
+        elif btn['state'] == 'O':
+            btn['state'] = '+'
+            btn['btn'].config(text=str(btn['num']),bg='yellow')
+            
+    #-------------------------------------------------------------------------#
+    def set_numbers_for_btns(self):
+        mines = 0
+        for x in range(self.size):
+            for y in range(self.size):
+                if not self.btns[x][y]['checkMine']:
+                    mines = 0
+                    # check 8 neighboors
+                    if x - 1 >= 0 and y - 1 >= 0: # check top left
+                        if self.btns[x-1][y-1]['checkMine']:
+                            mines += 1
+                    if y - 1 >= 0: # check top
+                        if self.btns[x][y-1]['checkMine']:
+                            mines += 1
+                    if x + 1 < self.size and y - 1 >= 0: # check top right
+                        if self.btns[x+1][y-1]['checkMine']:
+                            mines += 1
+                    if x - 1 >= 0: # check left
+                        if self.btns[x-1][y]['checkMine']:
+                            mines += 1
+                    if x + 1 < self.size: # check right
+                        if self.btns[x+1][y]['checkMine']:
+                            mines += 1
+                    if x - 1 >= 0 and y + 1 < self.size: # check bottom left
+                        if self.btns[x-1][y+1]['checkMine']:
+                            mines += 1
+                    if y + 1 < self.size: # check bottom
+                        if self.btns[x][y+1]['checkMine']:
+                            mines += 1
+                    if x + 1 < self.size and y + 1 < self.size: # check bottom right
+                        if self.btns[x+1][y+1]['checkMine']:
+                            mines += 1
+                    self.btns[x][y]['num'] = mines
     #-------------------------------------------------------------------------#
     def easy_game(self):
         ##########################################################
@@ -126,8 +173,8 @@ class Mine():
         # size of the board
         self.size = 9
         # define the number of mines in the game
-        mines_no = 10
-        list_of_mines = self.get_random_mine(mines_no,self.size)
+        self.mines_no = 10
+        list_of_mines = self.get_random_mine(self.mines_no,self.size)
         for i in range(self.size):
             for j in range(self.size):
                 # at the beginning of each loop we have to define another dimension
@@ -142,9 +189,10 @@ class Mine():
                     'index' : str(i)+','+str(j),
                     'checkMine' : checkMine,
                     'state' : 'O',
+                    'num' : 0,
                     'x' : i,
                     'y' : j,
-                    'btn' : Button(self.game_frame,text='O')
+                    'btn' : Button(self.game_frame,text='#',bg='white')
                 }
 
                 btn['btn'].bind('<Button-1>', self.left_click(i,j))
@@ -152,6 +200,7 @@ class Mine():
                 btn["btn"].grid( row = i+1, column = j )
                 
                 self.btns[i][j] = btn
+        self.set_numbers_for_btns()
                 
         ##########################################################
 
