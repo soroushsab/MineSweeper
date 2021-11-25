@@ -1,5 +1,7 @@
 
 from tkinter import *
+import random
+from typing import Counter
 
 class Mine():
     #-------------------------------------------------------------------------#
@@ -74,15 +76,22 @@ class Mine():
         y = (hs/2) - (h/2)
         return '%dx%d+%d+%d' % (w, h, x, y)
     #-------------------------------------------------------------------------#
-    def right_click_0(self,i,j):
-        return lambda Button: self.right_click(self.btns[x][y])
-    #-------------------------------------------------------------------------#
     def right_click(self,i,j):
+        return lambda Button: self.right_click_0(self.btns[i][j])
+    #-------------------------------------------------------------------------#
+    def right_click_0(self,btn):
+        pass
+    #-------------------------------------------------------------------------#
+    def left_click(self,i,j):
+        return lambda Button: self.left_click_0(self.btns[i][j])
+    #-------------------------------------------------------------------------#
+    def left_click_0(self,btn):
         pass
     #-------------------------------------------------------------------------#
     def easy_game(self):
         ##########################################################
         # define the main root for easy game
+        self.close_program()
         self.root = Tk()
         # set title
         self.root.title('Soroush Minesweeper!')
@@ -91,30 +100,80 @@ class Mine():
         h = 400
         self.root.geometry(self.set_size_and_positions(h,w))
         ##########################################################
-        # define some frames for timer and buttons
+        # define a frame for timer and buttons
         self.first_frame = Frame(self.root)
-        self.first_frame_1 = Frame(self.first_frame)
-        self.first_frame_2 = Frame(self.first_frame)
         # pack the frame
         self.first_frame.pack()
-        self.first_frame_1.pack(side='left')
-        self.first_frame_2.pack(side='left')
         # set a list of label for information
         self.first_frame_set = {
-            'timer' : Label(self.first_frame_1, text='text'),
-            'back' : Button(self.first_frame_2, text='Back to menu'),
-            'reset' : Button(self.first_frame_2, text='Reset')
+            'timer' : Label(self.first_frame, text='text'),
+            'back' : Button(self.first_frame, text='Back to menu'),
+            'close' : Button(self.first_frame, text='Close',command= lambda: self.close_program()),
+            'reset' : Button(self.first_frame, text='Reset')
         }
         # set a position for them
-        self.first_frame_set["back"].grid(row = 0, column = 0)
+        self.first_frame_set["close"].grid(row = 1, column = 3)
+        self.first_frame_set["back"].grid(row = 1, column = 1)
         self.first_frame_set["reset"].grid(row = 1, column = 0)
         self.first_frame_set["timer"].grid(row = 0, column = 0)
         ##########################################################
+        # define another frame for game
+        self.game_frame = Frame(self.root)
+        # pack the frame
+        self.game_frame.pack()
+        # define a dictionary to set all buttons on it and set some property as well
+        self.btns = dict({})
+        # size of the board
+        self.size = 9
+        # define the number of mines in the game
+        mines_no = 10
+        list_of_mines = self.get_random_mine(mines_no,self.size)
+        for i in range(self.size):
+            for j in range(self.size):
+                # at the beginning of each loop we have to define another dimension
+                if j == 0 : # the first interation
+                    self.btns[i] = {}
+                # select randomly for mines
+                checkMine = False
+                if [i,j] in list_of_mines:
+                    checkMine = True
+                
+                btn = {
+                    'index' : str(i)+','+str(j),
+                    'checkMine' : checkMine,
+                    'state' : 'O',
+                    'x' : i,
+                    'y' : j,
+                    'btn' : Button(self.game_frame,text='O')
+                }
+
+                btn['btn'].bind('<Button-1>', self.left_click(i,j))
+                btn['btn'].bind('<Button-3>', self.right_click(i,j))
+                btn["btn"].grid( row = i+1, column = j )
+                
+                self.btns[i][j] = btn
+                
         ##########################################################
 
         ##########################################################
         ##########################################################
         ##########################################################
+    #-------------------------------------------------------------------------#
+    def get_random_mine(self,Mine,size):
+        l = []
+        for i in range(Mine):
+            r = random.randrange(size*size)
+            y = 0
+            x = 0
+            while r > size-1:
+                r -= size
+                x = r
+                y += 1
+            if [x,y] not in l:
+                l.append([x,y])
+            else:
+                i -= 1
+        return l 
     #-------------------------------------------------------------------------#
     def close_program(self):
         self.root.destroy()
