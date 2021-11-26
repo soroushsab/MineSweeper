@@ -1,5 +1,6 @@
 
 from tkinter import *
+from tkinter import messagebox as tkMessageBox
 import random
 from typing import Counter
 
@@ -69,6 +70,69 @@ class Mine():
         ##########################################################
         self.root.mainloop()
     #-------------------------------------------------------------------------#
+    def openOthers_inzero(self,btn):
+        x = btn['x']
+        y = btn['y']
+        btn['state'] = '+'
+        btn['btn'].config(text=str(btn['num']),bg='yellow')
+        if x - 1 >= 0 and y - 1 >= 0: # check top left
+            if self.btns[x-1][y-1]['state'] != '+':
+                self.btns[x-1][y-1]['state'] = '+'
+                self.btns[x-1][y-1]['btn'].config(text=str(self.btns[x-1][y-1]['num']),bg='yellow')
+                if self.btns[x-1][y-1]['num'] == 0:
+                    self.openOthers_inzero(self.btns[x-1][y-1])
+        if y - 1 >= 0: # check top
+            if self.btns[x][y-1]['state'] != '+':
+                self.btns[x][y-1]['state'] = '+'
+                self.btns[x][y-1]['btn'].config(text=str(self.btns[x][y-1]['num']),bg='yellow')
+                if self.btns[x][y-1]['num'] == 0:
+                    self.openOthers_inzero(self.btns[x][y-1])
+        if x + 1 < self.size and y - 1 >= 0: # check top right
+            if self.btns[x+1][y-1]['state'] != '+':
+                self.btns[x+1][y-1]['state'] = '+'
+                self.btns[x+1][y-1]['btn'].config(text=str(self.btns[x+1][y-1]['num']),bg='yellow')
+                if self.btns[x+1][y-1]['num'] == 0:
+                    self.openOthers_inzero(self.btns[x+1][y-1])
+        if x - 1 >= 0: # check left
+            if self.btns[x-1][y]['state'] != '+':
+                self.btns[x-1][y]['state'] = '+'
+                self.btns[x-1][y]['btn'].config(text=str(self.btns[x-1][y]['num']),bg='yellow')
+                if self.btns[x-1][y]['num'] == 0:
+                    self.openOthers_inzero(self.btns[x-1][y])
+        if x + 1 < self.size: # check right
+            if self.btns[x+1][y]['state'] != '+':
+                self.btns[x+1][y]['state'] = '+'
+                self.btns[x+1][y]['btn'].config(text=str(self.btns[x+1][y]['num']),bg='yellow')
+                if self.btns[x+1][y]['num'] == 0:
+                    self.openOthers_inzero(self.btns[x+1][y])
+        if x - 1 >= 0 and y + 1 < self.size: # check bottom left
+            if self.btns[x-1][y+1]['state'] != '+':
+                self.btns[x-1][y+1]['state'] = '+'
+                self.btns[x-1][y+1]['btn'].config(text=str(self.btns[x-1][y+1]['num']),bg='yellow')
+                if self.btns[x-1][y+1]['num'] == 0:
+                    self.openOthers_inzero(self.btns[x-1][y+1])
+        if y + 1 < self.size: # check bottom
+            if self.btns[x][y+1]['state'] != '+':
+                self.btns[x][y+1]['state'] = '+'
+                self.btns[x][y+1]['btn'].config(text=str(self.btns[x][y+1]['num']),bg='yellow')
+                if self.btns[x][y+1]['num'] == 0:
+                    self.openOthers_inzero(self.btns[x][y+1])
+        if x + 1 < self.size and y + 1 < self.size: # check bottom right
+            if self.btns[x+1][y+1]['state'] != '+':
+                self.btns[x+1][y+1]['state'] = '+'
+                self.btns[x+1][y+1]['btn'].config(text=str(self.btns[x+1][y+1]['num']),bg='yellow')
+                if self.btns[x+1][y+1]['num'] == 0:
+                    self.openOthers_inzero(self.btns[x+1][y+1])
+    #-------------------------------------------------------------------------#
+    def showAllMines(self):
+        for i in range(self.size):
+            for j in range(self.size):
+                if self.btns[i][j]['checkMine']:
+                    self.btns[i][j]['btn'].config(text = '*',bg='orange')
+    #-------------------------------------------------------------------------#
+    def user_lose(self):
+        res = tkMessageBox.askyesno("Game Over", 'You Lose! Play again?')
+    #-------------------------------------------------------------------------#
     def set_size_and_positions(self,h,w):
         hs = self.root.winfo_screenheight()
         ws = self.root.winfo_screenwidth()
@@ -95,11 +159,18 @@ class Mine():
         return lambda Button: self.left_click_0(self.btns[i][j])
     #-------------------------------------------------------------------------#
     def left_click_0(self,btn):
-        if btn['checkMine']:
+        if btn['state'] == 'P':
             pass
+        elif btn['checkMine']:
+            self.showAllMines()
+            btn['btn'].config(bg='red')
+            self.user_lose()
         elif btn['state'] == 'O':
-            btn['state'] = '+'
-            btn['btn'].config(text=str(btn['num']),bg='yellow')
+            if btn['num'] == 0:
+                self.openOthers_inzero(btn)
+            else:
+                btn['state'] = '+'
+                btn['btn'].config(text=str(btn['num']),bg='yellow')
             
     #-------------------------------------------------------------------------#
     def set_numbers_for_btns(self):
