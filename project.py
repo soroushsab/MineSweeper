@@ -2,7 +2,7 @@
 from tkinter import *
 from tkinter import messagebox as tkMessageBox
 import random
-from typing import Counter
+from datetime import datetime
 
 class Mine():
     #-------------------------------------------------------------------------#
@@ -37,8 +37,8 @@ class Mine():
         # set a list of button for levels
         self.btns_lvls = {
             'easy' : Button(self.frame_btns, text='Easy', command= lambda: self.easy_game()),
-            'normal' : Button(self.frame_btns, text='Normal'),
-            'hard' : Button(self.frame_btns, text='Hard')
+            'normal' : Button(self.frame_btns, text='Normal',command= lambda: self.normal_game()),
+            'hard' : Button(self.frame_btns, text='Hard',command= lambda: self.hard_game())
         }
         # set a position for them
         self.btns_lvls["easy"].grid(row = 0, column = 0)
@@ -130,8 +130,35 @@ class Mine():
                 if self.btns[i][j]['checkMine']:
                     self.btns[i][j]['btn'].config(text = '*',bg='orange')
     #-------------------------------------------------------------------------#
+    def updateTimer(self):
+        ts = "00:00:00"
+        if self.startTime != None:
+            delta = datetime.now() - self.startTime
+            ts = str(delta).split('.')[0] # drop ms
+            if delta.total_seconds() < 36000:
+                ts = "0" + ts # zero-pad
+        self.first_frame_set["timer"].config(text = ts)
+        self.first_frame.after(100, self.updateTimer)
+    #-------------------------------------------------------------------------#
+    def checkWin(self):
+        c = 0
+        for i in range(self.size):
+            for j in range(self.size):
+                if self.btns[i][j]['state'] == 'O' or self.btns[i][j]['state'] == 'P':
+                    c+=1
+        if c == self.mines_no:
+            res = tkMessageBox.askyesno("Game Over", 'You Win! Play again?')
+            if res:
+                self.reset_game()
+            else:
+                self.go_to_menu()
+    #-------------------------------------------------------------------------#
     def user_lose(self):
         res = tkMessageBox.askyesno("Game Over", 'You Lose! Play again?')
+        if res:
+            self.reset_game()
+        else:
+            self.go_to_menu()
     #-------------------------------------------------------------------------#
     def set_size_and_positions(self,h,w):
         hs = self.root.winfo_screenheight()
@@ -144,14 +171,18 @@ class Mine():
         return lambda Button: self.right_click_0(self.btns[i][j])
     #-------------------------------------------------------------------------#
     def right_click_0(self,btn):
-        if self.mines_no > 0 and btn['state'] == 'O':
+        if self.startTime == None:
+            self.startTime = datetime.now()
+        if self.flags_no > 0 and btn['state'] == 'O':
+            self.lbl_extra['Flags'].config(text=str(int(self.lbl_extra['Flags'].cget("text"))+1))
             btn['btn'].config(text='P')
             btn['state'] = 'P'
-            self.mines_no -= 1
+            self.flags_no -= 1
         elif btn['state'] == 'P':
-            btn['btn'].config(text=' ')
+            self.lbl_extra['Flags'].config(text=str(int(self.lbl_extra['Flags'].cget("text"))-1))
+            btn['btn'].config(text='#')
             btn['state'] = 'O'
-            self.mines_no += 1
+            self.flags_no += 1
         else:
             pass
     #-------------------------------------------------------------------------#
@@ -159,6 +190,8 @@ class Mine():
         return lambda Button: self.left_click_0(self.btns[i][j])
     #-------------------------------------------------------------------------#
     def left_click_0(self,btn):
+        if self.startTime == None:
+            self.startTime = datetime.now()
         if btn['state'] == 'P':
             pass
         elif btn['checkMine']:
@@ -171,7 +204,7 @@ class Mine():
             else:
                 btn['state'] = '+'
                 btn['btn'].config(text=str(btn['num']),bg='yellow')
-            
+            self.checkWin()
     #-------------------------------------------------------------------------#
     def set_numbers_for_btns(self):
         mines = 0
@@ -211,11 +244,15 @@ class Mine():
         # define the main root for easy game
         self.close_program()
         self.root = Tk()
+        # to set game type
+        self._g_type = 'easy'
+        # set a None value for start time
+        self.startTime = None
         # set title
         self.root.title('Soroush Minesweeper!')
         # set size and position
-        w = 400
-        h = 400
+        w = 250
+        h = 320
         self.root.geometry(self.set_size_and_positions(h,w))
         ##########################################################
         # define a frame for timer and buttons
@@ -225,15 +262,15 @@ class Mine():
         # set a list of label for information
         self.first_frame_set = {
             'timer' : Label(self.first_frame, text='text'),
-            'back' : Button(self.first_frame, text='Back to menu'),
+            'back' : Button(self.first_frame, text='Back to menu',command= lambda: self.go_to_menu()),
             'close' : Button(self.first_frame, text='Close',command= lambda: self.close_program()),
-            'reset' : Button(self.first_frame, text='Reset')
+            'reset' : Button(self.first_frame, text='Reset',command= lambda: self.reset_game())
         }
         # set a position for them
-        self.first_frame_set["close"].grid(row = 1, column = 3)
-        self.first_frame_set["back"].grid(row = 1, column = 1)
-        self.first_frame_set["reset"].grid(row = 1, column = 0)
         self.first_frame_set["timer"].grid(row = 0, column = 0)
+        self.first_frame_set["reset"].grid(row = 1, column = 0)
+        self.first_frame_set["back"].grid(row = 1, column = 1)
+        self.first_frame_set["close"].grid(row = 1, column = 2)
         ##########################################################
         # define another frame for game
         self.game_frame = Frame(self.root)
@@ -245,6 +282,7 @@ class Mine():
         self.size = 9
         # define the number of mines in the game
         self.mines_no = 10
+        self.flags_no = 10
         list_of_mines = self.get_random_mine(self.mines_no,self.size)
         for i in range(self.size):
             for j in range(self.size):
@@ -272,16 +310,215 @@ class Mine():
                 
                 self.btns[i][j] = btn
         self.set_numbers_for_btns()
+        ##########################################################
+        # define another frame for details
+        self.extra_detail = Frame(self.root)
+        # pack the frame
+        self.extra_detail.pack()
+        # a set for extra details
+        self.lbl_extra = {
+            'Mines_text' : Label(self.extra_detail, text='Mines : '),
+            'Mines' : Label(self.extra_detail, text=str(self.mines_no)),
+            'Flags_text' : Label(self.extra_detail, text='Flags : '),
+            'Flags' : Label(self.extra_detail, text='0')
+        }
+        self.lbl_extra['Mines_text'].grid(row=0,column=0)
+        self.lbl_extra['Mines'].grid(row=0,column=1)
+        self.lbl_extra['Flags_text'].grid(row=0,column=2)
+        self.lbl_extra['Flags'].grid(row=0,column=3)
+        ##########################################################
+        self.updateTimer()
+        ##########################################################
+        ##########################################################
+    #-------------------------------------------------------------------------#
+    def normal_game(self):
+        ##########################################################
+        # define the main root for easy game
+        self.close_program()
+        self.root = Tk()
+        # to set game type
+        self._g_type = 'normal'
+        # set a None value for start time
+        self.startTime = None
+        # set title
+        self.root.title('Soroush Minesweeper!')
+        # set size and position
+        w = 400
+        h = 570
+        self.root.geometry(self.set_size_and_positions(h,w))
+        ##########################################################
+        # define a frame for timer and buttons
+        self.first_frame = Frame(self.root)
+        # pack the frame
+        self.first_frame.pack()
+        # set a list of label for information
+        self.first_frame_set = {
+            'timer' : Label(self.first_frame, text='text2'),
+            'back' : Button(self.first_frame, text='Back to menu',command= lambda: self.go_to_menu()),
+            'close' : Button(self.first_frame, text='Close',command= lambda: self.close_program()),
+            'reset' : Button(self.first_frame, text='Reset',command= lambda: self.reset_game())
+        }
+        # set a position for them
+        self.first_frame_set["timer"].grid(row = 0, column = 0)
+        self.first_frame_set["reset"].grid(row = 1, column = 0)
+        self.first_frame_set["back"].grid(row = 1, column = 1)
+        self.first_frame_set["close"].grid(row = 1, column = 2)
+        ##########################################################
+        # define another frame for game
+        self.game_frame = Frame(self.root)
+        # pack the frame
+        self.game_frame.pack()
+        # define a dictionary to set all buttons on it and set some property as well
+        self.btns = dict({})
+        # size of the board
+        self.size = 16
+        # define the number of mines in the game
+        self.mines_no = 25
+        self.flags_no = 25
+        list_of_mines = self.get_random_mine(self.mines_no,self.size)
+        for i in range(self.size):
+            for j in range(self.size):
+                # at the beginning of each loop we have to define another dimension
+                if j == 0 : # the first interation
+                    self.btns[i] = {}
+                # select randomly for mines
+                checkMine = False
+                if [i,j] in list_of_mines:
+                    checkMine = True
                 
-        ##########################################################
+                btn = {
+                    'index' : str(i)+','+str(j),
+                    'checkMine' : checkMine,
+                    'state' : 'O',
+                    'num' : 0,
+                    'x' : i,
+                    'y' : j,
+                    'btn' : Button(self.game_frame,text='#',bg='white')
+                }
 
+                btn['btn'].bind('<Button-1>', self.left_click(i,j))
+                btn['btn'].bind('<Button-3>', self.right_click(i,j))
+                btn["btn"].grid( row = i+1, column = j )
+                
+                self.btns[i][j] = btn
+        self.set_numbers_for_btns()
         ##########################################################
+        # define another frame for details
+        self.extra_detail = Frame(self.root)
+        # pack the frame
+        self.extra_detail.pack()
+        # a set for extra details
+        self.lbl_extra = {
+            'Mines_text' : Label(self.extra_detail, text='Mines : '),
+            'Mines' : Label(self.extra_detail, text=str(self.mines_no)),
+            'Flags_text' : Label(self.extra_detail, text='Flags : '),
+            'Flags' : Label(self.extra_detail, text='0')
+        }
+        self.lbl_extra['Mines_text'].grid(row=0,column=0)
+        self.lbl_extra['Mines'].grid(row=0,column=1)
+        self.lbl_extra['Flags_text'].grid(row=0,column=2)
+        self.lbl_extra['Flags'].grid(row=0,column=3)
+        ##########################################################
+        self.updateTimer()
+        ##########################################################
+        ##########################################################
+    #-------------------------------------------------------------------------#
+    def hard_game(self):
+        ##########################################################
+        # define the main root for easy game
+        self.close_program()
+        self.root = Tk()
+        # to set game type
+        self._g_type = 'hard'
+        # set a None value for start time
+        self.startTime = None
+        # set title
+        self.root.title('Soroush Minesweeper!')
+        # set size and position
+        w = 500
+        h = 670
+        self.root.geometry(self.set_size_and_positions(h,w))
+        ##########################################################
+        # define a frame for timer and buttons
+        self.first_frame = Frame(self.root)
+        # pack the frame
+        self.first_frame.pack()
+        # set a list of label for information
+        self.first_frame_set = {
+            'timer' : Label(self.first_frame, text='text2'),
+            'back' : Button(self.first_frame, text='Back to menu',command= lambda: self.go_to_menu()),
+            'close' : Button(self.first_frame, text='Close',command= lambda: self.close_program()),
+            'reset' : Button(self.first_frame, text='Reset',command= lambda: self.reset_game())
+        }
+        # set a position for them
+        self.first_frame_set["timer"].grid(row = 0, column = 0)
+        self.first_frame_set["reset"].grid(row = 1, column = 0)
+        self.first_frame_set["back"].grid(row = 1, column = 1)
+        self.first_frame_set["close"].grid(row = 1, column = 2)
+        ##########################################################
+        # define another frame for game
+        self.game_frame = Frame(self.root)
+        # pack the frame
+        self.game_frame.pack()
+        # define a dictionary to set all buttons on it and set some property as well
+        self.btns = dict({})
+        # size of the board
+        self.size = 23
+        # define the number of mines in the game
+        self.mines_no = 33
+        self.flags_no = 33
+        list_of_mines = self.get_random_mine(self.mines_no,self.size)
+        for i in range(self.size):
+            for j in range(self.size):
+                # at the beginning of each loop we have to define another dimension
+                if j == 0 : # the first interation
+                    self.btns[i] = {}
+                # select randomly for mines
+                checkMine = False
+                if [i,j] in list_of_mines:
+                    checkMine = True
+                
+                btn = {
+                    'index' : str(i)+','+str(j),
+                    'checkMine' : checkMine,
+                    'state' : 'O',
+                    'num' : 0,
+                    'x' : i,
+                    'y' : j,
+                    'btn' : Button(self.game_frame,text='#',bg='white')
+                }
+
+                btn['btn'].bind('<Button-1>', self.left_click(i,j))
+                btn['btn'].bind('<Button-3>', self.right_click(i,j))
+                btn["btn"].grid( row = i+1, column = j )
+                
+                self.btns[i][j] = btn
+        self.set_numbers_for_btns()
+        ##########################################################
+        # define another frame for details
+        self.extra_detail = Frame(self.root)
+        # pack the frame
+        self.extra_detail.pack()
+        # a set for extra details
+        self.lbl_extra = {
+            'Mines_text' : Label(self.extra_detail, text='Mines : '),
+            'Mines' : Label(self.extra_detail, text=str(self.mines_no)),
+            'Flags_text' : Label(self.extra_detail, text='Flags : '),
+            'Flags' : Label(self.extra_detail, text='0')
+        }
+        self.lbl_extra['Mines_text'].grid(row=0,column=0)
+        self.lbl_extra['Mines'].grid(row=0,column=1)
+        self.lbl_extra['Flags_text'].grid(row=0,column=2)
+        self.lbl_extra['Flags'].grid(row=0,column=3)
+        ##########################################################
+        self.updateTimer()
         ##########################################################
         ##########################################################
     #-------------------------------------------------------------------------#
     def get_random_mine(self,Mine,size):
         l = []
-        for i in range(Mine):
+        i = 0
+        while i < Mine:
             r = random.randrange(size*size)
             y = 0
             x = 0
@@ -291,12 +528,23 @@ class Mine():
                 y += 1
             if [x,y] not in l:
                 l.append([x,y])
-            else:
-                i -= 1
+                i+=1
         return l 
     #-------------------------------------------------------------------------#
     def close_program(self):
         self.root.destroy()
+    #-------------------------------------------------------------------------#
+    def reset_game(self):
+        if self._g_type == 'easy':
+            self.easy_game()
+        elif self._g_type == 'normal':
+            self.normal_game()
+        elif self._g_type == 'hard':
+            self.hard_game()
+    #-------------------------------------------------------------------------#
+    def go_to_menu(self):
+        self.close_program()
+        self.__init__()
     #-------------------------------------------------------------------------#
         
 
