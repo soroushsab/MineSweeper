@@ -20,7 +20,7 @@ class Mine():
         try:
             with open('saved_records.txt','r') as f:
                 for row in f:
-                    self.records.append(row.split('-')[:-1])
+                    self.records.append(row.split('%-%')[:-1])
             f.close
         except:
             print('no file')
@@ -499,7 +499,7 @@ class Mine():
         try:
             file = open('saved_records.txt','w')
             for el in self.records:
-                file.write(el[0]+'-'+el[1]+'-'+el[2]+'-\n')
+                file.write(el[0]+'%-%'+el[1]+'%-%'+el[2]+'%-%\n')
             file.close()
         except:
             print('error in save records')
