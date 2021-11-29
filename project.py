@@ -13,7 +13,7 @@ class Mine():
         self.root = Tk()
         # set title
         self.root.title('Soroush Minesweeper!')
-
+        self.root.config(bg='white')
         self.root.eval('tk::PlaceWindow . center')
         ##########################################################
         self.records = []
@@ -27,27 +27,27 @@ class Mine():
         self.records = sorted(self.records,key=lambda x: (x[1]))
         ##########################################################
         # define a frame for labels
-        self.frame_lbls = Frame(self.root)
+        self.frame_lbls = Frame(self.root,bg='white')
         # pack the frame
         self.frame_lbls.pack()
         # set a list of label for information
         self.lbls_info = {
-            'title' : Label(self.frame_lbls, text='Soroush Minesweeper'),
-            'welcome' : Label(self.frame_lbls, text='Welcome!')
+            'title' : Label(self.frame_lbls, text='Soroush Minesweeper',bg='white'),
+            'welcome' : Label(self.frame_lbls, text='Welcome!',bg='white')
         }
         # set a position for them
         self.lbls_info["title"].grid(row = 0, column = 0)
         self.lbls_info["welcome"].grid(row = 1, column = 0)
         ##########################################################
         # define a frame for buttons
-        self.frame_btns = Frame(self.root)
+        self.frame_btns = Frame(self.root,bg='white')
         # pack the frame
         self.frame_btns.pack()
         # set a list of button for levels
         self.btns_lvls = {
-            'easy' : Button(self.frame_btns, text='Easy', command= lambda: self.get_name_to_save('easy')),
-            'normal' : Button(self.frame_btns, text='Normal',command= lambda: self.get_name_to_save('normal')),
-            'hard' : Button(self.frame_btns, text='Hard',command= lambda: self.get_name_to_save('hard'))
+            'easy' : Button(self.frame_btns, text='Easy',bg='white', command= lambda: self.get_name_to_save('easy')),
+            'normal' : Button(self.frame_btns, text='Normal',bg='white',command= lambda: self.get_name_to_save('normal')),
+            'hard' : Button(self.frame_btns, text='Hard',bg='white',command= lambda: self.get_name_to_save('hard'))
         }
         # set a position for them
         self.btns_lvls["easy"].grid(row = 0, column = 0)
@@ -55,8 +55,8 @@ class Mine():
         self.btns_lvls["hard"].grid(row = 0, column = 2)
         ##########################################################
         # define a frame for custom
-        self.frame_btns_2 = Frame(self.root)
-        self.frame_btns_3 = Frame(self.root)
+        self.frame_btns_2 = Frame(self.root,bg='white')
+        self.frame_btns_3 = Frame(self.root,bg='white')
         # pack the frame
         self.frame_btns_2.pack()
         self.frame_btns_3.pack()
@@ -66,13 +66,13 @@ class Mine():
         self.get_mine_for_custom = StringVar()
         # set a list of button for levels
         self.all_custom = {
-            'x_lbl' : Label(self.frame_btns_2, text='Enter rows :'),
-            'x' : Entry(self.frame_btns_2, textvariable=self.get_size_for_custom_x),
-            'y_lbl' : Label(self.frame_btns_2, text='Enter columns :'),
-            'y' : Entry(self.frame_btns_2, textvariable=self.get_size_for_custom_y),
-            'mine_lbl' : Label(self.frame_btns_2, text='Enter number of Mines :'),
-            'mine' : Entry(self.frame_btns_2, textvariable=self.get_mine_for_custom),
-            'custom' : Button(self.frame_btns_3, text='Custom',command= lambda: self.get_name_to_save('custom'))
+            'x_lbl' : Label(self.frame_btns_2, text='Enter rows :',bg='white'),
+            'x' : Entry(self.frame_btns_2, textvariable=self.get_size_for_custom_x,bg='white'),
+            'y_lbl' : Label(self.frame_btns_2, text='Enter columns :',bg='white'),
+            'y' : Entry(self.frame_btns_2, textvariable=self.get_size_for_custom_y,bg='white'),
+            'mine_lbl' : Label(self.frame_btns_2, text='Enter number of Mines :',bg='white'),
+            'mine' : Entry(self.frame_btns_2, textvariable=self.get_mine_for_custom,bg='white'),
+            'custom' : Button(self.frame_btns_3, text='Custom',bg='white',command= lambda: self.get_name_to_save('custom'))
         }
         # set a position for them
         self.all_custom["x_lbl"].grid(row = 0, column = 0)
@@ -84,24 +84,24 @@ class Mine():
         self.all_custom["custom"].grid(row = 0, column = 0)
         ##########################################################
         # for records label
-        self.record_frame = Frame(self.root)
-        self.record_frame_easy = Frame(self.record_frame)
-        self.record_frame_normal = Frame(self.record_frame)
-        self.record_frame_hard = Frame(self.record_frame)
+        self.record_frame = Frame(self.root,bg='white')
+        self.record_frame_easy = Frame(self.record_frame,bg='white')
+        self.record_frame_normal = Frame(self.record_frame,bg='white')
+        self.record_frame_hard = Frame(self.record_frame,bg='white')
         # pack the frame
         self.record_frame.pack()
-        temp = Label(self.record_frame_easy,text='Easy').grid(row=0,column=0)
-        temp = Label(self.record_frame_normal,text='normal').grid(row=0,column=0)
-        temp = Label(self.record_frame_hard,text='hard').grid(row=0,column=0)
+        temp = Label(self.record_frame_easy,text='Easy',bg='white').grid(row=0,column=0)
+        temp = Label(self.record_frame_normal,text='normal',bg='white').grid(row=0,column=0)
+        temp = Label(self.record_frame_hard,text='hard',bg='white').grid(row=0,column=0)
         # list of records
         ii = 1
         for el in self.records:
             if el[2] == 'easy':
-                temp = Label(self.record_frame_easy,text=el[0] + ' : ' + el[1]).grid(row=ii,column=0)
+                temp = Label(self.record_frame_easy,text=el[0] + ' : ' + el[1],bg='white').grid(row=ii,column=0)
             elif el[2] == 'normal':
-                temp = Label(self.record_frame_normal,text=el[0] + ' : ' + el[1]).grid(row=ii,column=0)
+                temp = Label(self.record_frame_normal,text=el[0] + ' : ' + el[1],bg='white').grid(row=ii,column=0)
             elif el[2] == 'hard':
-                temp = Label(self.record_frame_hard,text=el[0] + ' : ' + el[1]).grid(row=ii,column=0)
+                temp = Label(self.record_frame_hard,text=el[0] + ' : ' + el[1],bg='white').grid(row=ii,column=0)
             ii+=1
         self.record_frame_easy.pack(side = 'left')
         self.record_frame_normal.pack(side = 'left')
@@ -113,14 +113,14 @@ class Mine():
         }
         ##########################################################
         # define a frame for logo and close button
-        self.frame_end = Frame(self.root)
+        self.frame_end = Frame(self.root,bg='white')
         # pack the frame
         self.frame_end.pack()
         # set a list of button for levels
         self.btn_and_lbl_ends = {
-            'logo' : Label(self.frame_end, image=self.images['logo']),
+            'logo' : Label(self.frame_end, image=self.images['logo'],bg='white'),
             # 'close' : Button(self.frame_end, text='Close',command= lambda: self.close_program()),
-            'close' : Button(self.frame_end, text='Close',command= lambda: self.close_program())
+            'close' : Button(self.frame_end, text='Close',bg='white',command= lambda: self.close_program())
         }
         # set a position for them
         self.btn_and_lbl_ends["logo"].grid(row = 0, column = 0)
