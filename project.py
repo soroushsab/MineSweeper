@@ -1,8 +1,10 @@
 
+from time import time
 from tkinter import *
 from tkinter import messagebox as tkMessageBox
 import random
 from datetime import datetime
+import time
 
 class Mine():
     #-------------------------------------------------------------------------#
@@ -253,7 +255,7 @@ class Mine():
                 if delta.total_seconds() < 36000:
                     ts = "0" + ts # zero-pad
             self.first_frame_set["timer"].config(text = ts)
-            self.first_frame.after(100, self.updateTimer)
+            self.root.after(100, self.updateTimer)
         except:
             print('Time Updator method')
     #-------------------------------------------------------------------------#
@@ -281,12 +283,13 @@ class Mine():
     #-------------------------------------------------------------------------#
     def user_lose(self):
         try:
-            self.checkComputer = False
             res = tkMessageBox.askyesno("Game Over", 'You Lose! Play again?')
             if res:
                 self.reset_game()
+                self.checkComputer = False
             else:
                 self.go_to_menu()
+                self.checkComputer = False
         except:
             print('user lose method')
     #-------------------------------------------------------------------------#
@@ -528,18 +531,63 @@ class Mine():
         except:
             print('play game')
     #-------------------------------------------------------------------------#
+    def check_around(self,btn):
+        x = btn['x']
+        y = btn['y']
+        probability = 0
+        if x - 1 >= 0 and y - 1 >= 0: # check top left
+            if self.btns[x-1][y-1]['state'] == '+':
+                probability += self.self.btns[x-1][y-1]['num']
+        if y - 1 >= 0: # check top
+            if self.btns[x][y-1]['state'] == '+':
+                probability += self.self.btns[x-1][y-1]['num']
+        if x + 1 < self.size_x and y - 1 >= 0: # check top right
+            if self.btns[x+1][y-1]['state'] == '+':
+                probability += self.self.btns[x-1][y-1]['num']
+        if x - 1 >= 0: # check left
+            if self.btns[x-1][y]['state'] == '+':
+                probability += self.self.btns[x-1][y-1]['num']
+        if x + 1 < self.size_x: # check right
+            if self.btns[x+1][y]['state'] == '+':
+                probability += self.self.btns[x-1][y-1]['num']
+        if x - 1 >= 0 and y + 1 < self.size_y: # check bottom left
+            if self.btns[x-1][y+1]['state'] == '+':
+                probability += self.self.btns[x-1][y-1]['num']
+        if y + 1 < self.size_y: # check bottom
+            if self.btns[x][y+1]['state'] == '+':
+                probability += self.self.btns[x-1][y-1]['num']
+        if x + 1 < self.size_x and y + 1 < self.size_y: # check bottom right
+            if self.btns[x+1][y+1]['state'] == '+':
+                probability += self.self.btns[x-1][y-1]['num']
+        return probability
+    #-------------------------------------------------------------------------#
+    def b_p_computer(self):
+        if (self.checkWin() and self.checkComputer):
+            r_i = random.randrange(self.size_x)
+            r_j = random.randrange(self.size_y)
+            if self.btns[r_i][r_j]['state'] == 'O':
+                self.left_click_0(self.btns[r_i][r_j])
+                self.root.after(500,self.b_p_computer())
+            else:
+                self.root.after(10,self.b_p_computer())
+        else:
+            return 
+    #-------------------------------------------------------------------------#
     def computer_play(self,level):
         try:
             self.checkComputer = True
             self.play_game('computer')
             if level == 'beginner':
+                self.b_p_computer()                 
+            elif level == 'mid-level':
                 while(self.checkWin() and self.checkComputer):
                     r_i = random.randrange(self.size_x)
                     r_j = random.randrange(self.size_y)
-                    self.left_click_0(self.btns[r_i][r_j])
-                    
-            elif level == 'mid-level':
-                pass
+                    if self.btns[r_i][r_j]['state'] == 'O':
+                        check_around_for_numbers = self.check_around(self.btns[r_i][r_j])
+                        if check_around_for_numbers < 8:
+                            if random.uniform(0, 1) > check_around_for_numbers/8:
+                                self.left_click_0(self.btns[r_i][r_j])
             elif level == 'intelligent':
                 pass
             if not self.checkWin():
@@ -583,6 +631,8 @@ class Mine():
     def reset_game(self):
         try:
             self.play_game(self._g_type)
+            if self._g_type == 'computer':
+                self.computer_play('beginner')
         except:
             print('reset method')
     #-------------------------------------------------------------------------#
