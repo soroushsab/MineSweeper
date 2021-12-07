@@ -561,17 +561,7 @@ class Mine():
                 probability += self.self.btns[x-1][y-1]['num']
         return probability
     #-------------------------------------------------------------------------#
-    def b_p_computer(self):
-        if (self.checkWin() and self.checkComputer):
-            r_i = random.randrange(self.size_x)
-            r_j = random.randrange(self.size_y)
-            if self.btns[r_i][r_j]['state'] == 'O':
-                self.left_click_0(self.btns[r_i][r_j])
-                self.root.after(500,self.b_p_computer())
-            else:
-                self.root.after(10,self.b_p_computer())
-        else:
-            return 
+
     #-------------------------------------------------------------------------#
     def computer_play(self,level):
         try:
