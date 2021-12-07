@@ -4,7 +4,7 @@ from tkinter import *
 from tkinter import messagebox as tkMessageBox
 import random
 from datetime import datetime
-import time
+import functools
 
 class Mine():
     #-------------------------------------------------------------------------#
@@ -17,6 +17,8 @@ class Mine():
             self.root.title('Soroush Minesweeper!')
             self.root.config(bg='white')
             self.root.eval('tk::PlaceWindow . center')
+            ##########################################################
+            self.record_for_machine_learning = []
             ##########################################################
             self.records = []
             try:
@@ -50,13 +52,17 @@ class Mine():
                 'easy' : Button(self.frame_btns, text='Easy',bg='white', command= lambda: self.get_name_to_save('easy')),
                 'normal' : Button(self.frame_btns, text='Normal',bg='white',command= lambda: self.get_name_to_save('normal')),
                 'hard' : Button(self.frame_btns, text='Hard',bg='white',command= lambda: self.get_name_to_save('hard')),
-                'computer' : Button(self.frame_btns, text='Computer Play',bg='white',command= lambda: self.computer_play('beginner'))
+                'computer1' : Button(self.frame_btns, text='Computer-Beginner',bg='white',command= lambda: self.computer_play('beginner')),
+                'computer2' : Button(self.frame_btns, text='Computer-mid level',bg='white',command= lambda: self.computer_play('mid-level')),
+                'computer3' : Button(self.frame_btns, text='Computer-Intelligent',bg='white',command= lambda: self.computer_play('intelligent'))
             }
             # set a position for them
             self.btns_lvls["easy"].grid(row = 0, column = 0)
             self.btns_lvls["normal"].grid(row = 0, column = 1)
             self.btns_lvls["hard"].grid(row = 0, column = 2)
-            self.btns_lvls["computer"].grid(row = 0, column = 3)
+            self.btns_lvls["computer1"].grid(row = 1, column = 0)
+            self.btns_lvls["computer2"].grid(row = 1, column = 1)
+            self.btns_lvls["computer3"].grid(row = 1, column = 2)
             ##########################################################
             # define a frame for custom
             self.frame_btns_2 = Frame(self.root,bg='white')
@@ -242,7 +248,8 @@ class Mine():
             for i in range(self.size_x):
                 for j in range(self.size_y):
                     if self.btns[i][j]['checkMine']:
-                        self.btns[i][j]['btn'].config(text = '*',bg='orange')
+                        pass
+                        # self.btns[i][j]['btn'].config(text = '*',bg='orange')
         except:
             print("Show all Mines method")
     #-------------------------------------------------------------------------#
@@ -253,9 +260,10 @@ class Mine():
                 delta = datetime.now() - self.startTime
                 ts = str(delta).split('.')[0] # drop ms
                 if delta.total_seconds() < 36000:
-                    ts = "0" + ts # zero-pad
-            self.first_frame_set["timer"].config(text = ts)
-            self.root.after(100, self.updateTimer)
+                    ts = "0" + ts # zero for hours
+            if not self.game_check_finish:
+                self.first_frame_set["timer"].config(text = ts)
+                self.first_frame_0.after(100, self.updateTimer)
         except:
             print('Time Updator method')
     #-------------------------------------------------------------------------#
@@ -269,8 +277,8 @@ class Mine():
             if c == self.mines_no:
                 if self._g_type == 'easy' or self._g_type == 'hard' or self._g_type == 'normal':
                     self.records.append([self.input_get_name.get() , self.first_frame_set["timer"].cget('text') , self._g_type])
-                if self._g_type == 'computer':
-                    return False
+                
+                self.game_check_finish = True
                 res = tkMessageBox.askyesno("NICE!", 'You Won! Play again?')
                 if res:
                     self.reset_game()
@@ -284,12 +292,11 @@ class Mine():
     def user_lose(self):
         try:
             res = tkMessageBox.askyesno("Game Over", 'You Lose! Play again?')
+            self.game_check_finish = True
             if res:
                 self.reset_game()
-                self.checkComputer = False
             else:
                 self.go_to_menu()
-                self.checkComputer = False
         except:
             print('user lose method')
     #-------------------------------------------------------------------------#
@@ -301,7 +308,7 @@ class Mine():
     #-------------------------------------------------------------------------#
     def right_click_0(self,btn):
         try:
-            if self.startTime == None:
+            if self.startTime == None and self._g_type != 'computer':
                 self.startTime = datetime.now()
             if self.flags_no > 0 and btn['state'] == 'O':
                 self.lbl_extra['Flags'].config(text=str(int(self.lbl_extra['Flags'].cget("text"))+1))
@@ -326,8 +333,9 @@ class Mine():
     #-------------------------------------------------------------------------#
     def left_click_0(self,btn):
         try:
-            if self.startTime == None:
+            if self.startTime == None and self._g_type != 'computer':
                 self.startTime = datetime.now()
+                pass
             if btn['state'] == 'P':
                 pass
             elif btn['checkMine']:
@@ -404,7 +412,6 @@ class Mine():
                 # set type
                 self._g_type = type
                 if type == 'easy':
-                    
                     # size of the board
                     self.size_x = 9
                     self.size_y = 9
@@ -412,7 +419,6 @@ class Mine():
                     self.mines_no = 10
                     self.flags_no = 10
                 elif type == 'normal':
-                    
                     # size of the board
                     self.size_x = 16
                     self.size_y = 16
@@ -420,7 +426,6 @@ class Mine():
                     self.mines_no = 25
                     self.flags_no = 25
                 elif type == 'hard':
-                    
                     # size of the board
                     self.size_x = 23
                     self.size_y = 23
@@ -493,7 +498,6 @@ class Mine():
                             checkMine = True
                         
                         btn = {
-                            'index' : str(i)+','+str(j),
                             'checkMine' : checkMine,
                             'state' : 'O',
                             'num' : 0,
@@ -525,66 +529,159 @@ class Mine():
                 self.lbl_extra['Flags_text'].grid(row=0,column=2)
                 self.lbl_extra['Flags'].grid(row=0,column=3)
                 ##########################################################
-                self.updateTimer()
+                self.game_check_finish = False
+                if self._g_type != 'computer':
+                    self.updateTimer()
                 ##########################################################
                 ##########################################################
         except:
             print('play game')
     #-------------------------------------------------------------------------#
     def check_around(self,btn):
-        x = btn['x']
-        y = btn['y']
-        probability = 0
-        if x - 1 >= 0 and y - 1 >= 0: # check top left
-            if self.btns[x-1][y-1]['state'] == '+':
-                probability += self.self.btns[x-1][y-1]['num']
-        if y - 1 >= 0: # check top
-            if self.btns[x][y-1]['state'] == '+':
-                probability += self.self.btns[x-1][y-1]['num']
-        if x + 1 < self.size_x and y - 1 >= 0: # check top right
-            if self.btns[x+1][y-1]['state'] == '+':
-                probability += self.self.btns[x-1][y-1]['num']
-        if x - 1 >= 0: # check left
-            if self.btns[x-1][y]['state'] == '+':
-                probability += self.self.btns[x-1][y-1]['num']
-        if x + 1 < self.size_x: # check right
-            if self.btns[x+1][y]['state'] == '+':
-                probability += self.self.btns[x-1][y-1]['num']
-        if x - 1 >= 0 and y + 1 < self.size_y: # check bottom left
-            if self.btns[x-1][y+1]['state'] == '+':
-                probability += self.self.btns[x-1][y-1]['num']
-        if y + 1 < self.size_y: # check bottom
-            if self.btns[x][y+1]['state'] == '+':
-                probability += self.self.btns[x-1][y-1]['num']
-        if x + 1 < self.size_x and y + 1 < self.size_y: # check bottom right
-            if self.btns[x+1][y+1]['state'] == '+':
-                probability += self.self.btns[x-1][y-1]['num']
-        return probability
+        try:
+            number = btn['num']
+            if number == 0:
+                print('sa')
+                return 0
+            temp_list = []
+            flags = 0
+            x = btn['x']
+            y = btn['y']
+            around = 0
+            if x - 1 >= 0 and y - 1 >= 0: # check top left
+                if self.btns[x-1][y-1]['state'] == 'O'  :
+                    around += 1
+                    temp_list.append([x-1,y-1])
+                elif self.btns[x-1][y-1]['state'] == 'P'  :
+                    flags += 1
+            if y - 1 >= 0: # check top
+                if self.btns[x][y-1]['state'] == 'O'  :
+                    around += 1
+                    temp_list.append([x,y-1])
+                elif self.btns[x][y-1]['state'] == 'P'  :
+                    flags += 1
+            if x + 1 < self.size_x and y - 1 >= 0: # check top right
+                if self.btns[x+1][y-1]['state'] == 'O'  :
+                    around += 1
+                    temp_list.append([x+1,y-1])
+                elif self.btns[x+1][y-1]['state'] == 'P'  :
+                    flags += 1
+            if x - 1 >= 0: # check left
+                if self.btns[x-1][y]['state'] == 'O'  :
+                    around += 1
+                    temp_list.append([x-1,y])
+                elif self.btns[x-1][y]['state'] == 'P'  :
+                    flags += 1
+            if x + 1 < self.size_x: # check right
+                if self.btns[x+1][y]['state'] == 'O'  :
+                    around += 1
+                    temp_list.append([x+1,y])
+                elif self.btns[x+1][y]['state'] == 'P'  :
+                    flags += 1
+            if x - 1 >= 0 and y + 1 < self.size_y: # check bottom left
+                if self.btns[x-1][y+1]['state']  == 'O'  :
+                    around += 1
+                    temp_list.append([x-1,y+1])
+                elif self.btns[x-1][y+1]['state'] == 'P'  :
+                    flags += 1
+            if y + 1 < self.size_y: # check bottom
+                if self.btns[x][y+1]['state'] == 'O'  :
+                    around += 1
+                    temp_list.append([x,y+1])
+                elif self.btns[x][y+1]['state'] == 'P'  :
+                    flags += 1
+            if x + 1 < self.size_x and y + 1 < self.size_y: # check bottom right
+                if self.btns[x+1][y+1]['state'] == 'O'  :
+                    around += 1
+                    temp_list.append([x+1,y+1])
+                elif self.btns[x+1][y+1]['state'] == 'P'  :
+                    flags += 1
+            #################################################################
+            if flags == number:
+                for i in temp_list:
+                    self.left_click_0(self.btns[i[0]][i[1]])
+                    pass
+                return 1
+            elif number-flags == around:
+                for i in temp_list:
+                    self.btns[i[0]][i[1]]['btn'].config(text = 'P')
+                    self.btns[i[0]][i[1]]['state'] = 'P'
+                    return 1
+            else:
+                for i in range(len(temp_list)):
+                    temp_list[i] = [temp_list[i],1-((number-flags)/around)]
+                temp_list = sorted(temp_list,key=lambda x: (x[1]))
+                for i in temp_list:
+                    if i[1] == 0:
+                        self.btns[i[0][0]][i[0][1]]['state'] = 'P'
+                        self.btns[i[0][0]][i[0][1]]['btn'].config(text = 'P')
+                        return 1
+        except:
+            print('check around')
     #-------------------------------------------------------------------------#
-
+    def get_all_opens(self):
+        res = []
+        for i in range(self.size_x):
+            for j in range(self.size_y):
+                if self.btns[i][j]['state'] == '+' and self.btns[i][j]['num'] > 0:
+                    res.append(self.btns[i][j])
+        return res
+    #-------------------------------------------------------------------------#
+    def b_p_computer(self):
+        if not self.game_check_finish:
+            r_i = random.randrange(self.size_x)
+            r_j = random.randrange(self.size_y)
+            if self.btns[r_i][r_j]['state'] == 'O':
+                self.left_click_0(self.btns[r_i][r_j])
+                self.root.after(1000,self.b_p_computer)
+            else:
+                self.b_p_computer()
+        else:
+            return
+    #-------------------------------------------------------------------------#
+    def m_p_computer(self):
+        if not self.game_check_finish:
+            if self.ci == 5:
+                self.temp_check = True
+                self.ci = 0
+            r_i = random.randrange(self.size_x)
+            r_j = random.randrange(self.size_y)
+            if self.btns[r_i][r_j]['state'] == 'O' and self.temp_check:
+                self.left_click_0(self.btns[r_i][r_j])
+                self.root.after(1000, self.m_p_computer) 
+                self.temp_check = False
+            else:
+                opens = self.get_all_opens()
+                if len(opens) < 5:
+                    self.temp_check = True
+                else:
+                    self.ci += 1
+                    re0 = False
+                    for el in opens:
+                        re = self.check_around(el)
+                        if re == 1:
+                            re0 = True
+                    if not re0:
+                        self.temp_check = True
+                self.root.after(1000, self.m_p_computer) 
+        else:
+            return
     #-------------------------------------------------------------------------#
     def computer_play(self,level):
         try:
-            self.checkComputer = True
+            self.level_c_p = level
             self.play_game('computer')
             if level == 'beginner':
-                self.b_p_computer()                 
+                self.b_p_computer()  
             elif level == 'mid-level':
-                while(self.checkWin() and self.checkComputer):
-                    r_i = random.randrange(self.size_x)
-                    r_j = random.randrange(self.size_y)
-                    if self.btns[r_i][r_j]['state'] == 'O':
-                        check_around_for_numbers = self.check_around(self.btns[r_i][r_j])
-                        if check_around_for_numbers < 8:
-                            if random.uniform(0, 1) > check_around_for_numbers/8:
-                                self.left_click_0(self.btns[r_i][r_j])
+                self.temp_check = True
+                self.ci = 0
+                self.m_p_computer()
+                    
             elif level == 'intelligent':
                 pass
-            if not self.checkWin():
-                res = tkMessageBox.showinfo("NICE!")
-                self.go_to_menu()
-        except:
-            print('computer play method')
+        except :
+            print('computer player method')
     #-------------------------------------------------------------------------#
     def get_random_mine(self,Mine,size_x,size_y):
         try:
@@ -620,9 +717,10 @@ class Mine():
     #-------------------------------------------------------------------------#
     def reset_game(self):
         try:
-            self.play_game(self._g_type)
             if self._g_type == 'computer':
-                self.computer_play('beginner')
+                self.computer_play(self.level_c_p)
+            else:
+                self.play_game(self._g_type)
         except:
             print('reset method')
     #-------------------------------------------------------------------------#
