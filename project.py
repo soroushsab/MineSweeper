@@ -477,18 +477,23 @@ class Mine():
     def play_game(self,type):
         try:
             ##########################################################
+            # Computer player needs to be different from others
             if type == 'computer':
+                # as I used this variable and it hasn't defined yet for computer player, so I added in here
                 self.input_get_name = StringVar()
+                # type of computer player that is "computer"
                 self.input_get_name.set(type)
+                # type would be "computer"
                 self._g_type = type
                 # size of the board
                 self.size_x = 9
                 self.size_y = 9
-                # define the number of mines in the game
+                # define the number of mines in the game and flags that should be equal
                 self.mines_no = 10
                 self.flags_no = 10
-
+            # to check if a player did not add his/her name. so a message will show and then it will go to menu to start another one
             if self.input_get_name.get() == "" :
+                # message box
                 res = tkMessageBox.askyesno("Warning", 'You need to enter a name. Do you want to try again?')
                 if res:
                     self.go_to_menu()
@@ -496,6 +501,11 @@ class Mine():
                     self.close_program()
             else:
                 # set type
+                # this is for four type of game that we have:
+                # - easy
+                # - normal
+                # - hard
+                # - custom
                 self._g_type = type
                 if type == 'easy':
                     # size of the board
@@ -519,13 +529,18 @@ class Mine():
                     self.mines_no = 33
                     self.flags_no = 33
                 elif type == 'custom':
+                    # if it is a custom game we need to make sure that all inputs has been filled
+                    # and all of them are numbers. THIS IS FOR AVOIDING RUNTIME ERROR
                     if not self.get_size_for_custom_x.get().isnumeric() or not self.get_size_for_custom_y.get().isnumeric() or not self.get_mine_for_custom.get().isnumeric():
+                        # a message box
                         res = tkMessageBox.askyesno("Warning", 'You need to enter all inputs for custom play. Do you want to try again?')
                         if res:
                             self.go_to_menu()
                         else:
                             self.close_program()
                     else:
+                        # if all parts (number of rows, number of columns, and number of mines) filled correctly
+                        # we need to get them all and save them in variables
                         # size of the board
                         self.size_x = int(self.get_size_for_custom_x.get())
                         self.size_y = int(self.get_size_for_custom_y.get())
@@ -534,8 +549,9 @@ class Mine():
                         self.mines_no = int(self.get_mine_for_custom.get())
                         self.flags_no = int(self.get_mine_for_custom.get())
                 ##########################################################
-                # define the main root
+                # close the previous root
                 self.close_program()
+                # define the main root
                 self.root = Tk()
                 # set a None value for start time
                 self.startTime = None
@@ -543,10 +559,10 @@ class Mine():
                 self.root.title('Soroush Minesweeper!')
                 self.root.eval('tk::PlaceWindow . center')
                 ##########################################################
-                # define a frame for timer and buttons
+                # define two frames for timer and buttons
                 self.first_frame_0 = Frame(self.root)
                 self.first_frame = Frame(self.root)
-                # pack the frame
+                # pack frames
                 self.first_frame_0.pack()
                 self.first_frame.pack()
                 # set a list of label for information
@@ -568,35 +584,47 @@ class Mine():
                 self.game_frame = Frame(self.root)
                 # pack the frame
                 self.game_frame.pack()
-                # define a dictionary to set all buttons on it and set some property as well
+                # define a list of dictionary to set all buttons on it and set some property as well
                 self.btns = dict({})
-
+                # get a list of rows and columns randomly to put mine in them
                 list_of_mines = self.get_random_mine(self.mines_no,self.size_x,self.size_y)
-
+                # this loop is for define all buttons
                 for i in range(self.size_x):
                     for j in range(self.size_y):
                         # at the beginning of each loop we have to define another dimension
                         if j == 0 : # the first interation
                             self.btns[i] = {}
-                        # select randomly for mines
+                        # check mine is defined for buttons
                         checkMine = False
+                        # if index is in the random mine list the button would be mine
                         if [i,j] in list_of_mines:
                             checkMine = True
-                        
+                        # each button is a set of attributes
                         btn = {
+                            # mine checker
                             'checkMine' : checkMine,
+                            # state which is "O" and it means not opened
+                            # if we flag it, it would be "P", and if open it,it would be "+"
                             'state' : 'O',
+                            # number would be number of mines around the button
                             'num' : 0,
+                            # position x
                             'x' : i,
+                            # position y
                             'y' : j,
+                            # and define a button
                             'btn' : Button(self.game_frame,text='#',bg='white')
                         }
-
+                        # with bind we will define a function for each action
+                        # <Button-1> is left click
+                        # <Button-3> is right clck
                         btn['btn'].bind('<Button-1>', self.left_click(i,j))
                         btn['btn'].bind('<Button-3>', self.right_click(i,j))
+                        # set position for button
                         btn["btn"].grid( row = i+1, column = j )
-                        
+                        # add the button to the list
                         self.btns[i][j] = btn
+                # call st number function
                 self.set_numbers_for_btns()
                 ##########################################################
                 # define another frame for details
@@ -615,7 +643,9 @@ class Mine():
                 self.lbl_extra['Flags_text'].grid(row=0,column=2)
                 self.lbl_extra['Flags'].grid(row=0,column=3)
                 ##########################################################
+                # define game checker
                 self.game_check_finish = False
+                # we need to make sure thet we dont need timer in computer
                 if self._g_type != 'computer':
                     self.updateTimer()
                 ##########################################################
@@ -624,21 +654,33 @@ class Mine():
             print('play game')
     #-------------------------------------------------------------------------#
     def check_around(self,btn):
+        # this function defined for mid-level computer player
+        # actually it is high level but not intelligent
+        # bacese I just used if for doing that
+        # this function will get an opened button
         try:
+            # get number of booms
             number = btn['num']
+            # if there is no boom there no need to check
             if number == 0:
-                print('sa')
                 return 0
+            # a templist to put all not opened button around the opened button
             temp_list = []
+            # a counter for number of flags around the button
             flags = 0
+            # positions
             x = btn['x']
             y = btn['y']
+            # number of all not opened button around the opened button
             around = 0
             if x - 1 >= 0 and y - 1 >= 0: # check top left
+                # if it is not opened
                 if self.btns[x-1][y-1]['state'] == 'O'  :
+                    # count it and add it to the temp list
                     around += 1
                     temp_list.append([x-1,y-1])
                 elif self.btns[x-1][y-1]['state'] == 'P'  :
+                    # if it has a flag just count it as flagged button
                     flags += 1
             if y - 1 >= 0: # check top
                 if self.btns[x][y-1]['state'] == 'O'  :
@@ -683,16 +725,24 @@ class Mine():
                 elif self.btns[x+1][y+1]['state'] == 'P'  :
                     flags += 1
             #################################################################
+            # if the number of boom around the button is equal to number of flags it means
+            # there is nor more booms there so just all around this opened button
             if flags == number:
                 for i in temp_list:
                     self.left_click_0(self.btns[i[0]][i[1]])
                     pass
                 return 1
+            # if not equal but number of buttons around this opened button equal
+            # to difference between number of flags and the number of button
+            # it means all other not opened buttons are booms
             elif number-flags == around:
                 for i in temp_list:
                     self.btns[i[0]][i[1]]['btn'].config(text = 'P')
                     self.btns[i[0]][i[1]]['state'] = 'P'
                     return 1
+            # if none of above
+            # we will make a list of arounds and the choose one them that 
+            # probability of being boom is more than others and make it flag
             else:
                 for i in range(len(temp_list)):
                     temp_list[i] = [temp_list[i],1-((number-flags)/around)]
@@ -725,6 +775,7 @@ class Mine():
                 r_j = random.randrange(self.size_y)
                 if self.btns[r_i][r_j]['state'] == 'O':
                     self.left_click_0(self.btns[r_i][r_j])
+                    # delay
                     self.root.after(1000,self.b_p_computer)
                 else:
                     self.b_p_computer()
@@ -734,44 +785,69 @@ class Mine():
             print('beginner player')
     #-------------------------------------------------------------------------#
     def m_p_computer(self):
-        if not self.game_check_finish:
-            if self.ci == 5:
-                self.temp_check = True
-                self.ci = 0
-            r_i = random.randrange(self.size_x)
-            r_j = random.randrange(self.size_y)
-            if self.btns[r_i][r_j]['state'] == 'O' and self.temp_check:
-                self.left_click_0(self.btns[r_i][r_j])
-                self.root.after(1000, self.m_p_computer) 
-                self.temp_check = False
-            else:
-                opens = self.get_all_opens()
-                if len(opens) < 5:
+        try:
+            # check the game has not been finished
+            if not self.game_check_finish:
+                # it is a counter to count if we have 5 times movement then we will choose
+                # a button randomly (by making random selection check true)
+                if self.ci == 5:
                     self.temp_check = True
+                    # reset the counter
+                    self.ci = 0
+                # get random positions
+                r_i = random.randrange(self.size_x)
+                r_j = random.randrange(self.size_y)
+                # if the button is not opened and random selection check is true select one randomly
+                if self.btns[r_i][r_j]['state'] == 'O' and self.temp_check:
+                    self.left_click_0(self.btns[r_i][r_j])
+                    self.root.after(1000, self.m_p_computer) 
+                    self.temp_check = False
                 else:
-                    self.ci += 1
-                    re0 = False
-                    for el in opens:
-                        re = self.check_around(el)
-                        if re == 1:
-                            re0 = True
-                    if not re0:
+                    # get list of all open buttons
+                    opens = self.get_all_opens()
+                    # if the number of open button is less that 5 it means we dont have enough
+                    # open button to continue so we have to select more randomly
+                    if len(opens) < 5:
                         self.temp_check = True
-                self.root.after(1000, self.m_p_computer) 
-        else:
-            return
+                    # if there are enough open buttins
+                    else:
+                        # use a counter to do after 5 times select a random button
+                        self.ci += 1
+                        # it is a check variable to make sure we have a movement
+                        re0 = False
+                        for el in opens:
+                            # check around all open buttons
+                            re = self.check_around(el)
+                            # if we had a movement
+                            if re == 1:
+                                re0 = True
+                        # if we did not have movement select randomly next time
+                        if not re0:
+                            self.temp_check = True
+                    # this a delay for each movement
+                    self.root.after(1000, self.m_p_computer) 
+            else:
+                return
+        except:
+            print('mid-level')
     #-------------------------------------------------------------------------#
     def computer_play(self,level):
         try:
+            # three levels
+            # get level
             self.level_c_p = level
+            # computer player type
             self.play_game('computer')
             if level == 'beginner':
+                # call beginner function
                 self.b_p_computer()  
             elif level == 'mid-level':
+                # random check variable
                 self.temp_check = True
+                # counter
                 self.ci = 0
+                # call mid-level function
                 self.m_p_computer()
-                    
             elif level == 'intelligent':
                 pass
         except :
