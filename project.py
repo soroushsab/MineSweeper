@@ -1,4 +1,5 @@
 
+from os import error
 from time import time
 from tkinter import *
 from tkinter import messagebox as tkMessageBox
@@ -330,8 +331,10 @@ class Mine():
                 res = tkMessageBox.askyesno("NICE!", 'You Won! Play again?')
                 if res:
                     self.reset_game()
+                    return
                 else:
                     self.go_to_menu()
+                    return
             else:
                 # if the number of not opened buttons is not equal to number of mines just return true to do some actions somewhere else
                 return True
@@ -347,8 +350,10 @@ class Mine():
             res = tkMessageBox.askyesno("Game Over", 'You Lose! Play again?')
             if res:
                 self.reset_game()
+                return
             else:
                 self.go_to_menu()
+                return
         except:
             print('user lose method')
     #-------------------------------------------------------------------------#
@@ -497,8 +502,10 @@ class Mine():
                 res = tkMessageBox.askyesno("Warning", 'You need to enter a name. Do you want to try again?')
                 if res:
                     self.go_to_menu()
+                    return
                 else:
                     self.close_program()
+                    return
             else:
                 # set type
                 # this is for four type of game that we have:
@@ -536,8 +543,10 @@ class Mine():
                         res = tkMessageBox.askyesno("Warning", 'You need to enter all inputs for custom play. Do you want to try again?')
                         if res:
                             self.go_to_menu()
+                            return
                         else:
                             self.close_program()
+                            return
                     else:
                         # if all parts (number of rows, number of columns, and number of mines) filled correctly
                         # we need to get them all and save them in variables
@@ -548,6 +557,15 @@ class Mine():
                         # define the number of mines in the game
                         self.mines_no = int(self.get_mine_for_custom.get())
                         self.flags_no = int(self.get_mine_for_custom.get())
+                        # valid (number of rows and columns more than 2 and number of mines less than row*column) way
+                        if self.size_x < 2 or self.size_y < 2 or self.mines_no >= self.size_x*self.size_y:
+                            res = tkMessageBox.askyesno("Warning", 'You need to enter all inputs in a valid (number of rows and columns more than 2 and number of mines less than row*column) way for custom play. Do you want to try again?')
+                            if res:
+                                self.go_to_menu()
+                                return
+                            else:
+                                self.close_program()
+                                return
                 ##########################################################
                 # close the previous root
                 self.close_program()
