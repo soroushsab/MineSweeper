@@ -5,7 +5,12 @@ from tkinter import *
 from tkinter import messagebox as tkMessageBox
 import random
 from datetime import datetime
-import functools
+from numpy.lib.function_base import select
+import pandas as pd
+import numpy as np
+import pathlib
+Address = str(pathlib.Path(__file__).parent.resolve())
+print(Address)
 
 class Mine():
     #-------------------------------------------------------------------------#
@@ -17,7 +22,7 @@ class Mine():
             self.records = []
             try:
                 # read from saveed file
-                with open('saved_records.txt','r') as f:
+                with open(Address+'/saved_records.txt','r') as f:
                     for row in f:
                         # I defined a way to make file readable and now I used my way to read and split
                         self.records.append(row.split('%-%')[:-1])
@@ -28,6 +33,21 @@ class Mine():
             # sort file by time which is second column
             self.records = sorted(self.records,key=lambda x: (x[1]))
             ##########################################################
+            # this is a list to save all movement to make data for machine learning
+            self.actions = []
+            self.actions_of_winner = []
+            ##########################################################
+            try:
+                # read from saveed file
+                with open(Address+'/saved_actions.txt','r') as f:
+                    for row in f:
+                        # I defined a way to make file readable and now I used my way to read and split
+                        self.actions_of_winner.append(row.split(',')[:-1])
+                f.close
+            except:
+                # if it is the first time just print no file
+                print('no file')
+            ##########################################################
             # define the main root
             self.root = Tk()
             # set title
@@ -36,9 +56,6 @@ class Mine():
             self.root.config(bg='white')
             # set the window in center of the screen
             self.root.eval('tk::PlaceWindow . center')
-            ##########################################################
-
-            self.record_for_machine_learning = []
             ##########################################################
             # define a frame for labels
             self.frame_lbls = Frame(self.root,bg='white')
@@ -129,9 +146,7 @@ class Mine():
             self.record_frame_easy.pack(side = 'left')
             self.record_frame_normal.pack(side = 'left')
             self.record_frame_hard.pack(side = 'left')
-            ##########################################################
-            # define images for my logo
-            logo_img = PhotoImage(file = "images/logo.gif")
+
             ##########################################################
             # define a frame for logo and close button
             self.frame_end = Frame(self.root,bg='white')
@@ -139,11 +154,9 @@ class Mine():
             self.frame_end.pack()
             # set a list of button for levels
             self.btn_and_lbl_ends = {
-                'logo' : Label(self.frame_end, image=logo_img,bg='white'),
                 'close' : Button(self.frame_end, text='Close',bg='white',command= lambda: self.close_program())
             }
             # set a position for them
-            self.btn_and_lbl_ends["logo"].grid(row = 0, column = 0)
             self.btn_and_lbl_ends["close"].grid(row = 1, column = 0)
             ##########################################################
             self.root.mainloop()
@@ -284,6 +297,8 @@ class Mine():
     #-------------------------------------------------------------------------#
     def updateTimer(self):
         try:
+            if self._g_type == 'computer':
+                return
             # this is a timer to show the time to player
             # and this will save in the record files
             # set 0 at first
@@ -307,6 +322,21 @@ class Mine():
         except:
             print('Time Updator method')
     #-------------------------------------------------------------------------#
+    def save_actions(self):
+        try:
+            # we need to save all actions
+            file = open(Address+'/saved_actions.txt','w')
+            for el in self.actions_of_winner:
+                for ind,ell in enumerate(el):
+                    # if ind == len(el) - 1 :
+                    #     file.write(str(ell))
+                    # else:
+                    file.write(str(ell)+",")
+                file.write('\n')
+            file.close()
+        except:
+            print('error in save records')
+    #-------------------------------------------------------------------------#
     def checkWin(self):
         # this function count number of not opened buttons if it is equal to number of mines it means
         # all are open except mines. so player will win.
@@ -326,6 +356,10 @@ class Mine():
                     self.records.append([self.input_get_name.get() , self.first_frame_set["timer"].cget('text') , self._g_type])
                 # this variable defined to check that is game has been finished or not.
                 self.game_check_finish = True
+                # if someone won, we need to record his/her actions
+                self.actions_of_winner = self.actions_of_winner + self.actions
+                # save actions in file
+                self.save_actions()
                 # show a message with two buttons (YES and NO)
                 # and ask player to play again or not
                 res = tkMessageBox.askyesno("NICE!", 'You Won! Play again?')
@@ -395,6 +429,10 @@ class Mine():
                 btn['state'] = 'P'
                 # Flags minus one
                 self.flags_no -= 1
+                # get data to make a dataset for ML
+                lll = self.All_around_a_button(btn)
+                lll.append(2)
+                self.actions.append(lll)
             elif btn['state'] == 'P':
                 # if it alredy is a flag try to remove flage
                 # add numbre of flags, change the label for number of flags and state
@@ -402,6 +440,10 @@ class Mine():
                 btn['btn'].config(text='#')
                 btn['state'] = 'O'
                 self.flags_no += 1
+                # get data to make a dataset for ML
+                lll = self.All_around_a_button(btn)
+                lll.append(2)
+                self.actions.append(lll)
             else:
                 pass
         except:
@@ -431,6 +473,10 @@ class Mine():
             # if it is not mine or flagged or opened
             elif btn['state'] == 'O':
                 # if number of button (number of flags around it) is 0 all button around it should be open automatically 
+                # get data to make a dataset for ML
+                lll = self.All_around_a_button(btn)
+                lll.append(1)
+                self.actions.append(lll)
                 if btn['num'] == 0:
                     self.openOthers_inzero(btn)
                 else:
@@ -773,6 +819,103 @@ class Mine():
         except:
             print('check around')
     #-------------------------------------------------------------------------#
+    def All_around_a_button(self,btn):
+        try:
+            # to make data for machine learning I need to have all around a button
+            x = btn['x']
+            y = btn['y']
+            temp_l = [] # I will get all around state 
+            # if it has been opened so just get the number
+            # else get the state that are "O" or "P"
+            if x - 1 >= 0 and y - 1 >= 0: # check top left
+                if self.btns[x-1][y-1]['state'] == '+':
+                    temp_l.append(self.btns[x-1][y-1]['num'])
+                elif self.btns[x-1][y-1]['state'] == 'P':
+                    temp_l.append(-2)
+                else:
+                    temp_l.append(-1)
+            else:
+                temp_l.append(-3)
+            if y - 1 >= 0: # check top
+                if self.btns[x][y-1]['state'] == '+':
+                    temp_l.append(self.btns[x][y-1]['num'])
+                elif self.btns[x][y-1]['state'] == 'P':
+                    temp_l.append(-2)
+                else:
+                    temp_l.append(-1)
+            else:
+                temp_l.append(-3)
+            if x + 1 < self.size_x and y - 1 >= 0: # check top right
+                if self.btns[x+1][y-1]['state'] == '+':
+                    temp_l.append(self.btns[x+1][y-1]['num'])
+                elif self.btns[x+1][y-1]['state'] == 'P':
+                    temp_l.append(-2)
+                else:
+                    temp_l.append(-1)
+            else:
+                temp_l.append(-3)
+            if x - 1 >= 0: # check left
+                if self.btns[x-1][y]['state'] == '+':
+                    temp_l.append(self.btns[x-1][y]['num'])
+                elif self.btns[x-1][y]['state'] == 'P':
+                    temp_l.append(-2)
+                else:
+                    temp_l.append(-1)
+            else:
+                temp_l.append(-3)
+            if x + 1 < self.size_x: # check right
+                if self.btns[x+1][y]['state'] == '+':
+                    temp_l.append(self.btns[x+1][y]['num'])
+                elif self.btns[x+1][y]['state'] == 'P':
+                    temp_l.append(-2)
+                else:
+                    temp_l.append(-1)
+            else:
+                temp_l.append(-3)
+            if x - 1 >= 0 and y + 1 < self.size_y: # check bottom right
+                if self.btns[x-1][y+1]['state'] == '+':
+                    temp_l.append(self.btns[x-1][y+1]['num'])
+                elif self.btns[x-1][y+1]['state'] == 'P':
+                    temp_l.append(-2)
+                else:
+                    temp_l.append(-1)
+            else:
+                temp_l.append(-3)
+            if y + 1 < self.size_y: # check bottom
+                if self.btns[x][y+1]['state'] == '+':
+                    temp_l.append(self.btns[x][y+1]['num'])
+                elif self.btns[x][y+1]['state'] == 'P':
+                    temp_l.append(-2)
+                else:
+                    temp_l.append(-1)
+            else:
+                temp_l.append(-3)
+            if x + 1 < self.size_x and y + 1 < self.size_y: # check bottom right    
+                if self.btns[x+1][y+1]['state'] == '+':
+                    temp_l.append(self.btns[x+1][y+1]['num'])
+                elif self.btns[x+1][y+1]['state'] == 'P':
+                    temp_l.append(-2)
+                else:
+                    temp_l.append(-1)
+            else:
+                temp_l.append(-3)
+            temp_l.append(self.get_number_of_opens())
+            return temp_l
+        except:
+            print('get closes func')
+    #-------------------------------------------------------------------------#
+    def get_number_of_opens(self):
+        try:
+            # to make data for machine learning I need to have number of open buttons
+            res = 0
+            for i in range(self.size_x):
+                for j in range(self.size_y):
+                    if self.btns[i][j]['state'] == '+':
+                        res+=1
+            return res
+        except:
+            print('get num opens func')
+    #-------------------------------------------------------------------------#
     def get_all_opens(self):
         try:
             # for computer player mid level I need to get all opened button list
@@ -849,6 +992,81 @@ class Mine():
         except:
             print('mid-level')
     #-------------------------------------------------------------------------#
+    def get_all_close_data_to_predict(self):
+        try:
+            res = []
+            for i in range(self.size_x):
+                for j in range(self.size_y):
+                    if self.btns[i][j]['state'] == 'O':
+                        res.append(self.btns[i][j])
+            return res
+        except:
+            print('get_all_close_data_to_predict')
+    #-------------------------------------------------------------------------#
+    def i_p_computer(self):
+        try:
+            self.i_c_p_counter +=1 
+            if self.i_c_p_counter == 10:
+                pass
+                # self.i_c_p_counter = 0
+                # r_i = random.randrange(self.size_x)
+                # r_j = random.randrange(self.size_y)
+                # if self.btns[r_i][r_j]['state'] == 'O':
+                #     self.left_click_0(self.btns[r_i][r_j])
+                #     # delay
+                #     self.root.after(1000,self.i_p_computer)
+                # else:
+                #     self.i_p_computer()
+            if not self.game_check_finish :
+                list_1 = self.get_all_close_data_to_predict()
+                t_l = []
+                for el in list_1:
+                    t_l.append(self.All_around_a_button(el))
+                headers = ['tl','t','tr','l','r','bl','b','br','state']
+                df = pd.DataFrame(np.array(t_l), columns=headers)
+                resultDT = self.model.predict(df)
+                return
+                # print(resultDT)
+                # for idx, val in enumerate(resultDT):
+                #     if val == 1:
+                #         self.left_click_0(list_1[idx])
+                #         self.checkWin()
+                #         self.root.after(1000,self.i_p_computer)
+                #         return
+                #     else:
+                #         self.right_click_0(list_1[idx])
+                #         self.root.after(1000,self.i_p_computer)
+                #         return
+            else:
+                return
+        except Exception as e:
+            print(e)
+    #-------------------------------------------------------------------------#
+    def ML_for_inteligent(self):
+        try:
+            # some codes that make a model of previous actions and then calculate the accuracy
+            from sklearn import model_selection
+            from sklearn import metrics
+            from sklearn import tree
+            # top left, top, ..... , state, class(1,2,-2 -> left click, right click, unright click [:)))] )
+            headers = ['tl','t','tr','l','r','bl','b','br','opens','class']
+            # create a dataframe
+            df = pd.DataFrame(np.array(self.actions_of_winner), columns=headers)
+            inputs = df[headers[:-1]]
+            target = df[headers[-1]]
+            X_train, X_test, y_train, y_test = model_selection.train_test_split(inputs, target, test_size = 0.3)
+            clf = tree.DecisionTreeClassifier()
+            model = clf.fit(X_train, y_train)
+            resultDT = model.predict(X_test)
+            accuracyDT = metrics.accuracy_score(y_test, resultDT)
+            print(accuracyDT)
+            self.i_c_p_counter = 0
+            self.model = model
+            self.i_p_computer()
+            return
+        except Exception as e:
+            print(e)
+    #-------------------------------------------------------------------------#
     def computer_play(self,level):
         try:
             # three levels
@@ -868,6 +1086,8 @@ class Mine():
                 self.m_p_computer()
             elif level == 'intelligent':
                 pass
+                # not working well  
+                # self.ML_for_inteligent()
         except :
             print('computer player method')
     #-------------------------------------------------------------------------#
@@ -895,7 +1115,7 @@ class Mine():
         try:
             try:
                 # to close the program we need to save all records
-                file = open('saved_records.txt','w')
+                file = open(Address+'/saved_records.txt','w')
                 for el in self.records:
                     file.write(el[0]+'%-%'+el[1]+'%-%'+el[2]+'%-%\n')
                 file.close()
